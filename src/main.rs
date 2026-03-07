@@ -1,3 +1,5 @@
+mod lexer;
+
 use clap::Parser;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -24,16 +26,24 @@ struct Args {
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    if args.file.extension().and_then(|e| e.to_str()) != Some("c") {
-        return Err("input file must have a .c extension".into());
+    // Preprocess the source file
+    let preprocessed = args.file.with_extension("i");
+    let status = std::process::Command::new("gcc")
+        .args(["-E", "-P"])
+        .arg(&args.file)
+        .arg("-o")
+        .arg(&preprocessed)
+        .status()
+        .map_err(|e| format!("failed to run gcc preprocessor: {e}"))?;
+    if !status.success() {
+        return Err("preprocessing failed".into());
     }
 
-    // TODO: preprocess the source file
+    let source = std::fs::read_to_string(&preprocessed)
+        .map_err(|e| format!("could not read {}: {e}", preprocessed.display()))?;
+    std::fs::remove_file(&preprocessed).ok();
 
-    let _source = std::fs::read_to_string(&args.file)
-        .map_err(|e| format!("could not read {}: {e}", args.file.display()))?;
-
-    // TODO: lex
+    let tokens = lexer::lex(&source)?;
     if args.lex {
         return Ok(());
     }
