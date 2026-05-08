@@ -1,13 +1,23 @@
 mod assembly_ast;
 mod ast;
 mod codegen;
-mod emit;
+mod emit_arm64;
+mod emit_x86_64;
 mod lexer;
 mod parser;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
+
+#[derive(ValueEnum, Clone, Default)]
+enum Arch {
+    #[default]
+    #[value(name = "x86_64")]
+    X86_64,
+    #[value(name = "arm64")]
+    Arm64,
+}
 
 #[derive(Parser)]
 #[command(about = "A C compiler")]
@@ -30,6 +40,10 @@ struct Args {
     /// Compile to assembly but do not link
     #[arg(short = 'S', group = "stage")]
     assembly: bool,
+
+    /// Target architecture
+    #[arg(long, default_value = "x86_64")]
+    arch: Arch,
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -70,8 +84,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let asm_file = args.file.with_extension("s");
-    emit::emit(&asm, &asm_file)
-        .map_err(|e| format!("failed to write {}: {e}", asm_file.display()))?;
+    match args.arch {
+        Arch::X86_64 => emit_x86_64::emit(&asm, &asm_file),
+        Arch::Arm64 => emit_arm64::emit(&asm, &asm_file),
+    }
+    .map_err(|e| format!("failed to write {}: {e}", asm_file.display()))?;
     if args.assembly {
         return Ok(());
     }
@@ -80,7 +97,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut link_cmd = std::process::Command::new("gcc");
     link_cmd.arg(&asm_file).arg("-o").arg(&exe_file);
     if cfg!(target_os = "macos") {
-        link_cmd.args(["-arch", "x86_64"]);
+        let arch_str = match args.arch {
+            Arch::X86_64 => "x86_64",
+            Arch::Arm64 => "arm64",
+        };
+        link_cmd.args(["-arch", arch_str]);
     }
     let status = link_cmd
         .status()
