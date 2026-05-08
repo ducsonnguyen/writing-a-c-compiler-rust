@@ -1,4 +1,6 @@
+mod assembly_ast;
 mod ast;
+mod codegen;
 mod lexer;
 mod parser;
 
@@ -56,8 +58,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // TODO: codegen
+    let asm = codegen::gen_program(program);
     if args.codegen {
+        println!("{asm}");
         return Ok(());
     }
 
