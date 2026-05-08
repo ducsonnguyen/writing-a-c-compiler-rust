@@ -15,6 +15,12 @@ pub enum Statement {
 
 pub enum Exp {
     Constant(i64),
+    Unary(UnaryOperator, Box<Exp>),
+}
+
+pub enum UnaryOperator {
+    Complement,
+    Negate,
 }
 
 fn indent(s: &str) -> String {
@@ -47,7 +53,18 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Exp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Exp::Constant(n) = self;
-        write!(f, "Constant({})", n)
+        match self {
+            Exp::Constant(n) => write!(f, "Constant({n})"),
+            Exp::Unary(op, inner) => write!(f, "Unary({op}, {inner})"),
+        }
+    }
+}
+
+impl fmt::Display for UnaryOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UnaryOperator::Complement => write!(f, "Complement"),
+            UnaryOperator::Negate => write!(f, "Negate"),
+        }
     }
 }

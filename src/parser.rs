@@ -1,4 +1,4 @@
-use crate::ast::{Exp, Function, Program, Statement};
+use crate::ast::{Exp, Function, Program, Statement, UnaryOperator};
 use crate::lexer::Token;
 use std::fmt;
 
@@ -31,6 +31,10 @@ impl<'a> Parser<'a> {
         } else {
             Err(ParseError("unexpected end of input".to_string()))
         }
+    }
+
+    fn peek(&self) -> Option<&'a Token> {
+        self.tokens.get(self.pos)
     }
 
     fn expect(&mut self, expected: &Token) -> Result<(), ParseError> {
@@ -76,9 +80,35 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_exp(&mut self) -> Result<Exp, ParseError> {
+        let next = self
+            .peek()
+            .ok_or_else(|| ParseError("unexpected end of input in expression".to_string()))?;
+        match next {
+            Token::Constant(n) => {
+                let n = *n;
+                self.pos += 1;
+                Ok(Exp::Constant(n))
+            }
+            Token::Tilde | Token::Hyphen => {
+                let op = self.parse_unop()?;
+                let inner = self.parse_exp()?;
+                Ok(Exp::Unary(op, Box::new(inner)))
+            }
+            Token::OpenParen => {
+                self.pos += 1;
+                let inner = self.parse_exp()?;
+                self.expect(&Token::CloseParen)?;
+                Ok(inner)
+            }
+            tok => Err(ParseError(format!("malformed expression: unexpected token {tok:?}"))),
+        }
+    }
+
+    fn parse_unop(&mut self) -> Result<UnaryOperator, ParseError> {
         match self.take_token()? {
-            Token::Constant(n) => Ok(Exp::Constant(*n)),
-            tok => Err(ParseError(format!("expected integer constant, got {tok:?}"))),
+            Token::Tilde => Ok(UnaryOperator::Complement),
+            Token::Hyphen => Ok(UnaryOperator::Negate),
+            tok => Err(ParseError(format!("expected unary operator, got {tok:?}"))),
         }
     }
 }

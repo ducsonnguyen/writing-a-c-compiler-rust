@@ -25,5 +25,6 @@ fn gen_statement(stmt: Statement) -> Vec<asm::Instruction> {
 fn gen_exp(exp: Exp) -> asm::Operand {
     match exp {
         Exp::Constant(n) => asm::Operand::Imm(n),
+        Exp::Unary(_, _) => todo!("codegen for unary operations"),
     }
 }
