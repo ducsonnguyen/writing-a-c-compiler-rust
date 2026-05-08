@@ -5,6 +5,7 @@ mod emit_arm64;
 mod emit_x86_64;
 mod lexer;
 mod parser;
+mod tacky;
 
 use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
@@ -32,6 +33,10 @@ struct Args {
     /// Run the lexer and parser, but stop before assembly generation
     #[arg(long, group = "stage")]
     parse: bool,
+
+    /// Run lexing, parsing, and TACKY IR generation, but stop before assembly generation
+    #[arg(long, group = "stage")]
+    tacky: bool,
 
     /// Perform lexing, parsing, and assembly generation, but stop before code emission
     #[arg(long, group = "stage")]
@@ -74,6 +79,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let program = parser::parse(&tokens)?;
     if args.parse {
         println!("{program}");
+        return Ok(());
+    }
+
+    if args.tacky {
+        let tacky_program = tacky::gen_program(program);
+        println!("{tacky_program}");
         return Ok(());
     }
 
