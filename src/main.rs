@@ -26,6 +26,10 @@ struct Args {
     /// Perform lexing, parsing, and assembly generation, but stop before code emission
     #[arg(long, group = "stage")]
     codegen: bool,
+
+    /// Compile to assembly but do not link
+    #[arg(short = 'S', group = "stage")]
+    assembly: bool,
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,6 +72,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let asm_file = args.file.with_extension("s");
     emit::emit(&asm, &asm_file)
         .map_err(|e| format!("failed to write {}: {e}", asm_file.display()))?;
+    if args.assembly {
+        return Ok(());
+    }
 
     let exe_file = args.file.with_extension("");
     let mut link_cmd = std::process::Command::new("gcc");
