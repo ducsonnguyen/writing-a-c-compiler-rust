@@ -82,13 +82,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    let tacky_program = tacky::gen_program(program);
     if args.tacky {
-        let tacky_program = tacky::gen_program(program);
         println!("{tacky_program}");
         return Ok(());
     }
 
-    let asm = codegen::gen_program(program);
+    let asm = codegen::gen_program(tacky_program);
     if args.codegen {
         println!("{asm}");
         return Ok(());
