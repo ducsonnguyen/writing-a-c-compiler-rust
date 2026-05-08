@@ -69,6 +69,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     emit::emit(&asm, &asm_file)
         .map_err(|e| format!("failed to write {}: {e}", asm_file.display()))?;
 
+    let exe_file = args.file.with_extension("");
+    let mut link_cmd = std::process::Command::new("gcc");
+    link_cmd.arg(&asm_file).arg("-o").arg(&exe_file);
+    if cfg!(target_os = "macos") {
+        link_cmd.args(["-arch", "x86_64"]);
+    }
+    let status = link_cmd
+        .status()
+        .map_err(|e| format!("failed to run gcc assembler/linker: {e}"))?;
+    std::fs::remove_file(&asm_file).ok();
+    if !status.success() {
+        return Err("assembly and linking failed".into());
+    }
+
     Ok(())
 }
 
