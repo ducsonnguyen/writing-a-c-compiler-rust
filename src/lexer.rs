@@ -14,6 +14,9 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Tilde,
+    Hyphen,
+    DoubleHyphen,
 }
 
 #[derive(Debug)]
@@ -43,6 +46,9 @@ enum TokenKind {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Tilde,
+    Hyphen,
+    DoubleHyphen,
 }
 
 static PATTERNS: LazyLock<Vec<TokenPattern>> = LazyLock::new(|| {
@@ -58,6 +64,10 @@ static PATTERNS: LazyLock<Vec<TokenPattern>> = LazyLock::new(|| {
         TokenPattern { regex: Regex::new(r"^\{").unwrap(), kind: TokenKind::OpenBrace },
         TokenPattern { regex: Regex::new(r"^\}").unwrap(), kind: TokenKind::CloseBrace },
         TokenPattern { regex: Regex::new(r"^;").unwrap(), kind: TokenKind::Semicolon },
+        TokenPattern { regex: Regex::new(r"^~").unwrap(), kind: TokenKind::Tilde },
+        // `--` must come before `-` since first match wins
+        TokenPattern { regex: Regex::new(r"^--").unwrap(), kind: TokenKind::DoubleHyphen },
+        TokenPattern { regex: Regex::new(r"^-").unwrap(), kind: TokenKind::Hyphen },
     ]
 });
 
@@ -99,6 +109,9 @@ pub fn lex(input: &str) -> Result<Vec<Token>, LexError> {
                     TokenKind::OpenBrace => Token::OpenBrace,
                     TokenKind::CloseBrace => Token::CloseBrace,
                     TokenKind::Semicolon => Token::Semicolon,
+                    TokenKind::Tilde => Token::Tilde,
+                    TokenKind::Hyphen => Token::Hyphen,
+                    TokenKind::DoubleHyphen => Token::DoubleHyphen,
                 };
                 tokens.push(token);
                 remaining = &remaining[len..];
