@@ -1,4 +1,6 @@
+mod ast;
 mod lexer;
+mod parser;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -48,8 +50,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // TODO: parse
+    let program = parser::parse(&tokens)?;
     if args.parse {
+        println!("{program}");
         return Ok(());
     }
 
