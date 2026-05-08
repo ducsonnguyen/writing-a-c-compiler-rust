@@ -1,6 +1,7 @@
 mod assembly_ast;
 mod ast;
 mod codegen;
+mod emit;
 mod lexer;
 mod parser;
 
@@ -64,7 +65,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // TODO: emit assembly to .s file
+    let asm_file = args.file.with_extension("s");
+    emit::emit(&asm, &asm_file)
+        .map_err(|e| format!("failed to write {}: {e}", asm_file.display()))?;
 
     Ok(())
 }
